@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+fastapi = "*"
+sqlmodel = "*"
+asyncpg = "*"
+uvicorn = "*"
+structlog = "*"
+pydantic-settings = "*"
+psutil = "*"
+
+[dev-packages]
+pytest = "*"
+pytest-cov = "*"
+pytest-asyncio = "*"
+git-filter-repo = "*"
+
+[requires]
+python_version = "3.14"

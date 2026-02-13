@@ -1,0 +1,6 @@
+[run]
+omit =
+    */setup.py
+    */main.py
+    */config/*
+    */version.py
