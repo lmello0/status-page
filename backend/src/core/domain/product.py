@@ -8,7 +8,7 @@ from core.domain.status_type import StatusType
 
 @dataclass
 class Product:
-    id: int
+    id: Optional[int]
 
     name: str
     description: Optional[str] = None
@@ -24,5 +24,5 @@ class Product:
         if not self.components:
             return StatusType.OPERATIONAL
 
-        statuses = [comp.get_aggregated_status() for comp in self.components]
+        statuses = [comp.current_status for comp in self.components]
         return max(statuses, key=lambda s: s.severity)

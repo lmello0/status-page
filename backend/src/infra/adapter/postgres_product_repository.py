@@ -1,4 +1,3 @@
-from collections import defaultdict
 from functools import lru_cache
 from typing import Optional
 
@@ -26,7 +25,7 @@ class PostgresProductRepository(ProductRepository):
         async with self._session_factory() as session:
             model: Optional[ProductModel] = None
 
-            if product.id > 0:
+            if product.id is not None and product.id > 0:
                 model = await session.get(ProductModel, product.id)
 
             if model is None:
@@ -36,7 +35,7 @@ class PostgresProductRepository(ProductRepository):
                     is_visible=product.is_visible,
                 )
 
-                if product.id > 0:
+                if product.id is not None and product.id > 0:
                     model.id = product.id
 
                 session.add(model)
@@ -134,44 +133,27 @@ class PostgresProductRepository(ProductRepository):
         )
 
     def _map_components(self, models: list[ComponentModel]) -> list[Component]:
-        if not models:
-            return []
-
-        children_by_parent: dict[Optional[int], list[ComponentModel]] = defaultdict(list)
-        for model in models:
-            children_by_parent[model.parent_id].append(model)
-
-        for siblings in children_by_parent.values():
-            siblings.sort(key=lambda item: item.id)
-
-        def build_tree(parent_id: Optional[int]) -> list[Component]:
-            return [
-                Component(
-                    id=model.id,
-                    product_id=model.product_id,
-                    name=model.name,
-                    type=model.type,
-                    current_status=model.current_status,
-                    parent_id=model.parent_id,
-                    subcomponents=build_tree(model.id),
-                    monitoring_config=(
-                        HealthcheckConfig(
-                            health_url=model.health_url,
-                            check_interval_seconds=model.check_interval_seconds,
-                            timeout_seconds=model.timeout_seconds,
-                            expected_status_code=model.expected_status_code,
-                            max_response_time_ms=model.max_response_time_ms,
-                            failures_before_outage=model.failures_before_outage,
-                        )
-                        if model.health_url
-                        else None
-                    ),
-                    is_active=model.is_active,
-                )
-                for model in children_by_parent[parent_id]
-            ]
-
-        return build_tree(None)
+        return [
+            Component(
+                id=model.id,
+                product_id=model.product_id,
+                name=model.name,
+                type=model.type,
+                current_status=model.current_status,
+                monitoring_config=(
+                    HealthcheckConfig(
+                        health_url=model.health_url,
+                        check_interval_seconds=model.check_interval_seconds,
+                        timeout_seconds=model.timeout_seconds,
+                        expected_status_code=model.expected_status_code,
+                        max_response_time_ms=model.max_response_time_ms,
+                        failures_before_outage=model.failures_before_outage,
+                    )
+                ),
+                is_active=model.is_active,
+            )
+            for model in sorted(models, key=lambda item: item.id)
+        ]
 
 
 @lru_cache

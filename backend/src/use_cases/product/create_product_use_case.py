@@ -9,7 +9,7 @@ class CreateProductUseCase:
 
     async def execute(self, product: ProductCreateDTO) -> Product:
         product_entity = Product(
-            id=0,
+            id=None,
             name=product.name,
             description=product.description,
             is_visible=product.is_visible,

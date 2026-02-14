@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from infra.config.config import get_config
 from infra.db.session import close_engine
 from infra.logging.config import configure_logging
+from infra.web.routers.component_router import router as component_router
 from infra.web.routers.product_router import router as product_router
 from infra.web.routers.stats_router import router as stats_router
 
@@ -38,5 +39,6 @@ def create_app() -> FastAPI:
 
     app.include_router(stats_router)
     app.include_router(product_router)
+    app.include_router(component_router)
 
     return app
