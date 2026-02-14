@@ -3,6 +3,7 @@ import sys
 from typing import Callable, Literal
 
 import structlog
+from structlog.types import EventDict
 
 
 def add_service_context(service_name: str, environment: str) -> Callable:
@@ -13,6 +14,11 @@ def add_service_context(service_name: str, environment: str) -> Callable:
         return event_dict
 
     return processor
+
+
+def drop_color_message_key(_, __, event_dict: EventDict) -> EventDict:
+    event_dict.pop("color_message", None)
+    return event_dict
 
 
 def configure_logging(
@@ -27,6 +33,7 @@ def configure_logging(
         structlog.stdlib.add_log_level,
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.stdlib.ExtraAdder(),
+        drop_color_message_key,
         structlog.processors.TimeStamper(fmt="iso"),
         structlog.processors.StackInfoRenderer(),
         add_service_context(service_name, environment),

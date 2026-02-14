@@ -6,8 +6,8 @@ from typing import Any
 import psutil
 from fastapi import APIRouter, Response, status
 
+from infra.config.config import get_config
 from infra.utils.formatters import format_bytes, format_time
-from infra.web.deps import get_config
 
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
