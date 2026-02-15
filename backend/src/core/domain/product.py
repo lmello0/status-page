@@ -24,5 +24,5 @@ class Product:
         if not self.components:
             return StatusType.OPERATIONAL
 
-        statuses = [comp.current_status for comp in self.components]
+        statuses = [comp.current_status for comp in self.components if comp.current_status is not None]
         return max(statuses, key=lambda s: s.severity)

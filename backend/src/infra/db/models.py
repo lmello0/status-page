@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -12,6 +10,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 
+from core.domain.component_type import ComponentType
 from core.domain.status_type import StatusType
 
 
@@ -43,7 +42,7 @@ class ProductModel(Base):
         init=False,
     )
 
-    components: Mapped[list[ComponentModel]] = relationship(
+    components: Mapped[list["ComponentModel"]] = relationship(
         back_populates="product",
         cascade="all, delete-orphan",
         default_factory=list,
@@ -54,20 +53,20 @@ class ComponentModel(Base):
     __tablename__ = "components"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id", ondelete="CASCADE"),
+    product_id: Mapped[int] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), index=True)
+
+    name: Mapped[str] = mapped_column(String(255), index=True, unique=True)
+    type: Mapped[ComponentType] = mapped_column(
+        Enum(ComponentType, native_enum=False, name="component_type"),
         index=True,
     )
-
-    name: Mapped[str] = mapped_column(String(255), index=True)
-    type: Mapped[str] = mapped_column(String(64), index=True)
     current_status: Mapped[Optional[StatusType]] = mapped_column(
-        Enum(StatusType, native_enum=False),
+        Enum(StatusType, native_enum=False, name="status_type"),
         default=None,
         index=True,
     )
 
-    health_url: Mapped[str] = mapped_column(String(1024), default=None)
+    health_url: Mapped[str] = mapped_column(String(1024), default=None, unique=True)
     check_interval_seconds: Mapped[int] = mapped_column(Integer, default=60)
     timeout_seconds: Mapped[int] = mapped_column(Integer, default=30)
     expected_status_code: Mapped[int] = mapped_column(Integer, default=200)

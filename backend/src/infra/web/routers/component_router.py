@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 
 from core.domain.component import Component
 from core.domain.page import Page
+from core.exceptions.component_already_exists_error import ComponentAlreadyExistsError
 from core.exceptions.component_not_found_error import ComponentNotFoundError
 from infra.adapter.postgres_component_repository import get_component_repository
 from infra.web.routers.schemas.component import (
@@ -28,7 +29,13 @@ router = APIRouter(prefix="/component", tags=["Component"])
 async def create_component(payload: ComponentCreateDTO) -> Component:
     use_case = CreateComponentUseCase(get_component_repository())
 
-    return await use_case.execute(payload)
+    try:
+        return await use_case.execute(payload)
+    except ComponentAlreadyExistsError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Component with {e.field}='{e.value}' already exists",
+        )
 
 
 @router.get(
@@ -57,6 +64,11 @@ async def update_component(component_id: int, payload: ComponentUpdateDTO) -> Co
         return await use_case.execute(component_id=component_id, component_data=payload)
     except ComponentNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Component not found")
+    except ComponentAlreadyExistsError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Component with this {error.field} already exists",
+        )
 
 
 @router.delete(

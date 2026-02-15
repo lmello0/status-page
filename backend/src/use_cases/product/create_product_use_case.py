@@ -12,7 +12,7 @@ class CreateProductUseCase:
             id=None,
             name=product.name,
             description=product.description,
-            is_visible=product.is_visible,
+            is_visible=True,
         )
 
         return await self.product_repository.save(product_entity)

@@ -5,7 +5,11 @@ from core.domain.product import Product
 from core.exceptions.product_not_found_error import ProductNotFoundError
 from infra.adapter.postgres_product_repository import get_product_repository
 from infra.web.routers.schemas.page import PageDTO
-from infra.web.routers.schemas.product import ProductCreateDTO, ProductResponseDTO, ProductUpdateDTO
+from infra.web.routers.schemas.product import (
+    ProductCreateDTO,
+    ProductResponseDTO,
+    ProductUpdateDTO,
+)
 from use_cases.product.create_product_use_case import CreateProductUseCase
 from use_cases.product.delete_product_use_case import DeleteProductUseCase
 from use_cases.product.get_all_products_use_case import GetAllProductsUseCase
@@ -33,7 +37,7 @@ async def create_product(payload: ProductCreateDTO) -> Product:
     status_code=status.HTTP_200_OK,
 )
 async def get_all_products(
-    is_visible: bool = Query(default=False),
+    is_visible: bool = Query(default=True),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1),
 ) -> Page[Product]:
@@ -69,7 +73,7 @@ async def get_product_by_name(product_name: str) -> Product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
 
 
-@router.put(
+@router.patch(
     "/{product_id}",
     response_model=ProductResponseDTO,
     status_code=status.HTTP_200_OK,
@@ -85,13 +89,8 @@ async def update_product(product_id: int, payload: ProductUpdateDTO) -> Product:
 
 @router.delete(
     "/{product_id}",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_product(product_id: int) -> dict[str, bool]:
+async def delete_product(product_id: int) -> None:
     use_case = DeleteProductUseCase(get_product_repository())
-    deleted = await use_case.execute(product_id)
-
-    if not deleted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-
-    return {"deleted": True}
+    await use_case.execute(product_id)

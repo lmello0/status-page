@@ -2,11 +2,13 @@ from functools import lru_cache
 from typing import Optional
 
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.domain.component import Component
 from core.domain.healthcheck_config import HealthcheckConfig
 from core.domain.page import Page
+from core.exceptions.component_already_exists_error import ComponentAlreadyExistsError
 from core.port.component_repository import ComponentRepository
 from infra.db.models import ComponentModel
 from infra.db.session import get_session_factory
@@ -21,48 +23,61 @@ class PostgresComponentRepository(ComponentRepository):
 
     async def save(self, component: Component) -> Component:
         async with self._session_factory() as session:
-            model: Optional[ComponentModel] = None
-            component_id = component.id
-
-            if component_id is not None and component_id > 0:
-                model = await session.get(ComponentModel, component_id)
-
-            if model is None:
-                model = ComponentModel(
-                    product_id=component.product_id,
-                    name=component.name,
-                    type=component.type,
-                    current_status=component.current_status,
-                    health_url=component.monitoring_config.health_url,
-                    check_interval_seconds=component.monitoring_config.check_interval_seconds,
-                    timeout_seconds=component.monitoring_config.timeout_seconds,
-                    expected_status_code=component.monitoring_config.expected_status_code,
-                    max_response_time_ms=component.monitoring_config.max_response_time_ms,
-                    failures_before_outage=component.monitoring_config.failures_before_outage,
-                    is_active=component.is_active,
-                )
+            try:
+                model: Optional[ComponentModel] = None
+                component_id = component.id
 
                 if component_id is not None and component_id > 0:
-                    model.id = component_id
+                    model = await session.get(ComponentModel, component_id)
 
-                session.add(model)
-            else:
-                model.product_id = component.product_id
-                model.name = component.name
-                model.type = component.type
-                model.current_status = component.current_status
-                model.health_url = component.monitoring_config.health_url
-                model.check_interval_seconds = component.monitoring_config.check_interval_seconds
-                model.timeout_seconds = component.monitoring_config.timeout_seconds
-                model.expected_status_code = component.monitoring_config.expected_status_code
-                model.max_response_time_ms = component.monitoring_config.max_response_time_ms
-                model.failures_before_outage = component.monitoring_config.failures_before_outage
-                model.is_active = component.is_active
+                if model is None:
+                    model = ComponentModel(
+                        product_id=component.product_id,
+                        name=component.name,
+                        type=component.type,
+                        current_status=component.current_status,
+                        health_url=component.monitoring_config.health_url,
+                        check_interval_seconds=component.monitoring_config.check_interval_seconds,
+                        timeout_seconds=component.monitoring_config.timeout_seconds,
+                        expected_status_code=component.monitoring_config.expected_status_code,
+                        max_response_time_ms=component.monitoring_config.max_response_time_ms,
+                        failures_before_outage=component.monitoring_config.failures_before_outage,
+                        is_active=component.is_active,
+                    )
 
-            await session.commit()
-            await session.refresh(model)
+                    if component_id is not None and component_id > 0:
+                        model.id = component_id
 
-            return self._to_domain(model)
+                    session.add(model)
+                else:
+                    model.product_id = component.product_id
+                    model.name = component.name
+                    model.type = component.type
+                    model.current_status = component.current_status
+                    model.health_url = component.monitoring_config.health_url
+                    model.check_interval_seconds = component.monitoring_config.check_interval_seconds
+                    model.timeout_seconds = component.monitoring_config.timeout_seconds
+                    model.expected_status_code = component.monitoring_config.expected_status_code
+                    model.max_response_time_ms = component.monitoring_config.max_response_time_ms
+                    model.failures_before_outage = component.monitoring_config.failures_before_outage
+                    model.is_active = component.is_active
+
+                await session.commit()
+                await session.refresh(model)
+
+                return self._to_domain(model)
+
+            except IntegrityError as e:
+                await session.rollback()
+
+                error_msg = str(e.orig).lower()
+
+                if "name" in error_msg or "components_name_key" in error_msg:
+                    raise ComponentAlreadyExistsError("name", component.name)
+                elif "health_url" in error_msg or "components_health_url_key" in error_msg:
+                    raise ComponentAlreadyExistsError("health_url", component.monitoring_config.health_url)
+                else:
+                    raise
 
     async def find_all_by_product_id(self, product_id: int, page: int, page_size: int) -> Page[Component]:
         async with self._session_factory() as session:
@@ -103,7 +118,7 @@ class PostgresComponentRepository(ComponentRepository):
                 select(func.count(ComponentModel.id)).where(ComponentModel.id == component_id)
             )
 
-            return result.scalar_one() == 0
+            return result.scalar_one_or_none() is None
 
     def _to_domain(self, model: ComponentModel) -> Component:
         return Component(
