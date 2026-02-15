@@ -37,6 +37,8 @@ class Config(BaseSettings):
     LOGGING_CONFIG: LoggingConfig = LoggingConfig()
     DATABASE_CONFIG: DatabaseConfig
 
+    SYNC_INTERVAL_SECONDS: int = 60
+
     model_config = SettingsConfigDict(
         frozen=True,
         extra="ignore",

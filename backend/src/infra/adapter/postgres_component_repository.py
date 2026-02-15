@@ -120,6 +120,23 @@ class PostgresComponentRepository(ComponentRepository):
 
             return result.scalar_one_or_none() is None
 
+    async def find_all_without_pagination(self) -> list[Component]:
+        async with self._session_factory() as session:
+            statement = select(ComponentModel).where(ComponentModel.is_active.is_(True))
+
+            models = (await session.execute(statement)).scalars().all()
+            content = [self._to_domain(model) for model in models]
+
+            return content
+
+    async def find_by_id(self, component_id: int) -> Optional[Component]:
+        async with self._session_factory() as session:
+            statement = select(ComponentModel).where(ComponentModel.id == component_id)
+
+            model = (await session.execute(statement)).scalar_one_or_none()
+
+            return self._to_domain(model) if model is not None else None
+
     def _to_domain(self, model: ComponentModel) -> Component:
         return Component(
             id=model.id,
