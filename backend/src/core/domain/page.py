@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, Iterator, TypeVar
 
 T = TypeVar("T")
 
@@ -11,3 +11,9 @@ class Page(Generic[T]):
     total_elements: int
     total_pages: int
     content: list[T]
+
+    def __iter__(self) -> Iterator[T]:
+        return iter(self.content)
+
+    def __len__(self) -> int:
+        return len(self.content)

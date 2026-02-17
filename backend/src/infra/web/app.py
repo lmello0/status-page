@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from infra.adapter.dict_component_cache import get_dict_component_cache
 from infra.adapter.local_scheduler import get_local_scheduler
 from infra.adapter.postgres_component_repository import get_component_repository
+from infra.adapter.postgres_log_repository import get_log_repository
 from infra.config.config import get_config
 from infra.db.session import close_engine
 from infra.logging.config import configure_logging
@@ -41,6 +42,7 @@ def create_app() -> FastAPI:
     )
 
     component_repository = get_component_repository()
+    log_repository = get_log_repository()
 
     healthcheck_service = HealthcheckService(
         sync_interval_seconds=config.SYNC_INTERVAL_SECONDS,
@@ -48,7 +50,7 @@ def create_app() -> FastAPI:
         cache=cache,
         http_client=http_client,
         get_components_use_case=GetAllComponentsUnpaginatedUseCase(component_repository),
-        update_component_status_use_case=UpdateComponentStatusUseCase(component_repository),
+        update_component_use_case=UpdateComponentStatusUseCase(component_repository, log_repository),
     )
 
     @asynccontextmanager

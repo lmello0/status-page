@@ -5,6 +5,7 @@ from core.domain.page import Page
 from core.exceptions.component_already_exists_error import ComponentAlreadyExistsError
 from core.exceptions.component_not_found_error import ComponentNotFoundError
 from infra.adapter.postgres_component_repository import get_component_repository
+from infra.adapter.postgres_log_repository import get_log_repository
 from infra.web.routers.schemas.component import (
     ComponentCreateDTO,
     ComponentResponseDTO,
@@ -48,7 +49,11 @@ async def get_all_components(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1),
 ) -> Page[Component]:
-    use_case = GetAllComponentsByProductUseCase(get_component_repository())
+    use_case = GetAllComponentsByProductUseCase(
+        component_repository=get_component_repository(),
+        log_repository=get_log_repository(),
+    )
+
     return await use_case.execute(product_id=product_id, page=page, page_size=page_size)
 
 

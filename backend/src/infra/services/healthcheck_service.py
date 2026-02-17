@@ -5,6 +5,7 @@ import httpx
 import structlog
 
 from core.domain.component import Component
+from core.domain.healthcheck_log import HealthcheckLog
 from core.domain.status_type import StatusType
 from core.port.component_cache import ComponentCache
 from core.port.scheduler import Scheduler
@@ -26,13 +27,13 @@ class HealthcheckService:
         cache: ComponentCache,
         http_client: httpx.AsyncClient,
         get_components_use_case: GetAllComponentsUnpaginatedUseCase,
-        update_component_status_use_case: UpdateComponentStatusUseCase,
+        update_component_use_case: UpdateComponentStatusUseCase,
     ):
         self.SYNC_INTERVAL_SECONDS = sync_interval_seconds
         self.scheduler = scheduler
 
         self.get_components_use_case = get_components_use_case
-        self.update_component_status_use_case = update_component_status_use_case
+        self.update_component_use_case = update_component_use_case
 
         self.cache = cache
         self.http_client = http_client
@@ -59,7 +60,7 @@ class HealthcheckService:
 
             cached_components = await self.cache.get_all()
             cached_ids = set(cached_components.keys())
-            active_ids = {c.id for c in components if c.id is not None}
+            active_ids = {c.id for c in components if c.id is not None and c.is_active}
 
             removed_ids = cached_ids - active_ids
             for component_id in removed_ids:
@@ -160,6 +161,8 @@ class HealthcheckService:
 
             is_healthy = status_ok and response_time_ok
 
+            status_before = component.current_status or StatusType.OPERATIONAL
+
             if not is_healthy:
                 self._failure_counts[component_id] = self._failure_counts.get(component_id, 0) + 1
                 failure_count = self._failure_counts[component_id]
@@ -167,15 +170,31 @@ class HealthcheckService:
                 if failure_count >= config.failures_before_outage:
                     new_status = StatusType.OUTAGE
                 else:
-                    new_status = StatusType.OUTAGE
+                    new_status = StatusType.DEGRADED
 
             else:
                 self._failure_counts[component_id] = 0
                 new_status = StatusType.OPERATIONAL
 
-            await self.update_component_status_use_case.execute(component_id, new_status)
+            log = HealthcheckLog(
+                component_id=component_id,
+                checked_at=end_time,
+                is_successful=is_healthy,
+                status_code=response.status_code,
+                response_time_ms=int(response_time_ms),
+                status_before=status_before,
+                status_after=new_status,
+                error_message=response.text if not status_ok else None,
+            )
 
             component.current_status = new_status
+            component.healthcheck_day_logs.append(log)
+
+            await self.update_component_use_case.execute(
+                component_id=component_id,
+                current_status=new_status,
+                new_log=log,
+            )
 
             log_level = logging.INFO if is_healthy else logging.WARNING
             logger.log(
@@ -189,25 +208,66 @@ class HealthcheckService:
 
         except httpx.TimeoutException:
             logger.error(f"Health check timeout for '{component.name}' " f"(timeout: {config.timeout_seconds}s)")
-            await self._handle_check_failure(component, StatusType.OUTAGE)
+
+            log = HealthcheckLog(
+                component_id=component_id,
+                checked_at=datetime.now(timezone.utc),
+                is_successful=False,
+                status_code=None,
+                response_time_ms=config.timeout_seconds,
+                status_before=component.current_status or StatusType.OPERATIONAL,
+                status_after=StatusType.OUTAGE,
+                error_message="Request timeout",
+            )
+
+            await self._handle_check_failure(component, StatusType.OUTAGE, log=log)
 
         except httpx.RequestError as e:
             logger.error(f"Health check failed for '{component.name}': {e}")
-            await self._handle_check_failure(component, StatusType.OUTAGE)
+
+            log = HealthcheckLog(
+                component_id=component_id,
+                checked_at=datetime.now(timezone.utc),
+                is_successful=False,
+                status_code=None,
+                response_time_ms=config.timeout_seconds,
+                status_before=component.current_status or StatusType.OPERATIONAL,
+                status_after=StatusType.OUTAGE,
+                error_message=str(e),
+            )
+
+            await self._handle_check_failure(component, StatusType.OUTAGE, log=log)
 
         except Exception as e:
             logger.exception(f"Unexpected error checking '{component.name}': {e}")
-            await self._handle_check_failure(component, StatusType.OUTAGE)
 
-    async def _handle_check_failure(self, component: Component, status: StatusType):
+            log = HealthcheckLog(
+                component_id=component_id,
+                checked_at=datetime.now(timezone.utc),
+                is_successful=False,
+                status_code=None,
+                response_time_ms=config.timeout_seconds,
+                status_before=component.current_status or StatusType.OPERATIONAL,
+                status_after=StatusType.OUTAGE,
+                error_message=f"Unexpected error: {str(e)}",
+            )
+
+            await self._handle_check_failure(component, StatusType.OUTAGE, log=log)
+
+    async def _handle_check_failure(self, component: Component, status: StatusType, log: HealthcheckLog):
         if component.id is None:
             return
 
         self._failure_counts[component.id] = self._failure_counts.get(component.id, 0) + 1
 
-        await self.update_component_status_use_case.execute(component.id, status)
-
         component.current_status = status
+        component.healthcheck_day_logs.append(log)
+
+        await self.update_component_use_case.execute(
+            component_id=component.id,
+            current_status=status,
+            new_log=log,
+        )
 
     async def trigger_immediate_check(self, component_id: int):
         await self._check_component_health(component_id)

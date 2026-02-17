@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from core.domain.page import Page
 from core.domain.product import Product
 from core.exceptions.product_not_found_error import ProductNotFoundError
+from infra.adapter.postgres_log_repository import get_log_repository
 from infra.adapter.postgres_product_repository import get_product_repository
 from infra.web.routers.schemas.page import PageDTO
 from infra.web.routers.schemas.product import (
@@ -41,7 +42,7 @@ async def get_all_products(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1),
 ) -> Page[Product]:
-    use_case = GetAllProductsUseCase(get_product_repository())
+    use_case = GetAllProductsUseCase(get_product_repository(), get_log_repository())
     return await use_case.execute(is_visible=is_visible, page=page, page_size=page_size)
 
 

@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 
 from core.domain.component_type import ComponentType
 from core.domain.status_type import StatusType
@@ -73,6 +74,16 @@ class ComponentUpdateDTO(CamelModel):
     monitoring_config: Optional[MonitoringConfigUpdateDTO] = None
 
 
+class HealthcheckLogDaySummaryResponseDTO(CamelModel):
+    date: datetime
+    total_checks: int
+    successful_checks: int
+    uptime: float
+    avg_response_time: int
+    max_response_time: int
+    overall_status: StatusType
+
+
 class ComponentResponseDTO(CamelModel):
     id: int
     product_id: int
@@ -81,3 +92,4 @@ class ComponentResponseDTO(CamelModel):
     monitoring_config: MonitoringConfigResponseDTO
     current_status: Optional[StatusType] = None
     is_active: bool
+    healthcheck_day_logs: list[HealthcheckLogDaySummaryResponseDTO] = Field(default_factory=list)
