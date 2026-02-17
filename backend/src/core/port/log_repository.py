@@ -16,3 +16,11 @@ class LogRepository(ABC):
     @abstractmethod
     async def get_last_n_day_summary(self, component_id: int, last_n_days: int) -> list[HealthcheckLogDaySummary]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_last_n_day_summary_bulk(
+        self,
+        component_ids: list[int],
+        last_n_days: int,
+    ) -> dict[int, list[HealthcheckLogDaySummary]]:
+        raise NotImplementedError

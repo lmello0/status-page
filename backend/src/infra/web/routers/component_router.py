@@ -48,13 +48,19 @@ async def get_all_components(
     product_id: int = Query(...),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1),
+    summary_days: int = Query(default=100, ge=1, le=365),
 ) -> Page[Component]:
     use_case = GetAllComponentsByProductUseCase(
         component_repository=get_component_repository(),
         log_repository=get_log_repository(),
     )
 
-    return await use_case.execute(product_id=product_id, page=page, page_size=page_size)
+    return await use_case.execute(
+        product_id=product_id,
+        page=page,
+        page_size=page_size,
+        summary_days=summary_days,
+    )
 
 
 @router.patch(
