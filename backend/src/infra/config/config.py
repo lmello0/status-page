@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from infra.utils.version import get_version
@@ -10,6 +10,7 @@ from infra.utils.version import get_version
 class LoggingConfig(BaseModel):
     LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     JSON_FORMAT: bool = False
+    LIBRARY_LOG_LEVELS: dict[str, str | int] = Field(default_factory=dict)
 
 
 class DatabaseConfig(BaseModel):

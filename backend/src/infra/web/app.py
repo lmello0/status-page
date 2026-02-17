@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
         json_logs=config.LOGGING_CONFIG.JSON_FORMAT,
         service_name=config.APP_NAME,
         environment=config.ENVIRONMENT,
+        library_log_levels=config.LOGGING_CONFIG.LIBRARY_LOG_LEVELS,
     )
 
     scheduler = get_local_scheduler()

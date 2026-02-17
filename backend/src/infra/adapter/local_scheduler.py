@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Any, Callable, Optional
 
@@ -43,7 +42,6 @@ class LocalScheduler(Scheduler):
             name=job_name,
             replace_existing=True,
             max_instances=1,
-            next_run_time=datetime.now(timezone.utc),
         )
 
         self._jobs[job_key] = job.id
