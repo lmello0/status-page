@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from infra.adapter.dict_component_cache import get_dict_component_cache
 from infra.adapter.local_scheduler import get_local_scheduler
@@ -72,6 +73,14 @@ def create_app() -> FastAPI:
         root_path=config.ROOT_PATH,
         docs_url="/apidocs",
         lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins="http://localhost:4200",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     app.add_middleware(
