@@ -11,6 +11,7 @@ from infra.config.config import get_config
 from infra.db.session import close_engine
 from infra.logging.config import configure_logging
 from infra.services.healthcheck_service import HealthcheckService
+from infra.web.middleware.request_event_log_middleware import RequestEventLogMiddleware
 from infra.web.routers.component_router import router as component_router
 from infra.web.routers.product_router import router as product_router
 from infra.web.routers.stats_router import router as stats_router
@@ -71,6 +72,12 @@ def create_app() -> FastAPI:
         root_path=config.ROOT_PATH,
         docs_url="/apidocs",
         lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        RequestEventLogMiddleware,
+        request_id_header="x-request-id",
+        excluded_path_suffixes={"/stats/health"},
     )
 
     app.state.host = config.HOST
