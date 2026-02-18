@@ -45,6 +45,7 @@ services:
     container_name: status_page_backend
     restart: unless-stopped
     environment:
+      - ENVIRONMENT=pro
       - DATABASE_CONFIG__USER=status_page_user
       - DATABASE_CONFIG__PASSWORD=1234
       - DATABASE_CONFIG__HOST=postgres
