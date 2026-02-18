@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 
 import httpx
 import structlog
-
 from core.domain.component import Component
 from core.domain.healthcheck_log import HealthcheckLog
 from core.domain.status_type import StatusType
@@ -187,9 +186,6 @@ class HealthcheckService:
                 error_message=response.text if not status_ok else None,
             )
 
-            component.current_status = new_status
-            component.healthcheck_day_logs.append(log)
-
             await self.update_component_use_case.execute(
                 component_id=component_id,
                 current_status=new_status,
@@ -259,9 +255,6 @@ class HealthcheckService:
             return
 
         self._failure_counts[component.id] = self._failure_counts.get(component.id, 0) + 1
-
-        component.current_status = status
-        component.healthcheck_day_logs.append(log)
 
         await self.update_component_use_case.execute(
             component_id=component.id,

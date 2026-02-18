@@ -3,7 +3,6 @@ from typing import Any, Callable, Optional
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler, BaseScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-
 from core.port.scheduler import Scheduler
 
 
@@ -42,6 +41,7 @@ class LocalScheduler(Scheduler):
             name=job_name,
             replace_existing=True,
             max_instances=1,
+            misfire_grace_time=interval_seconds,
         )
 
         self._jobs[job_key] = job.id

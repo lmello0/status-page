@@ -33,7 +33,7 @@ CREATE TABLE components (
   "name" varchar(100) NOT NULL,
   "description" text,
   "type" component_type NOT NULL,
-  "current_status" status_type NOT NULL DEFAULT 'OPERATIONAL',
+  "current_status" status_type,
   "status_changed_at" timestamp DEFAULT (now()),
 
   "health_url" varchar(500),
