@@ -48,6 +48,16 @@ export interface ProductApi {
   components: ProductComponentApi[];
 }
 
+export interface HealthcheckDayLogViewModel {
+  date: string;
+  status: StatusLevel;
+  uptime: number;
+  avgResponseTimeMs: number;
+  maxResponseTimeMs: number;
+  totalChecks: number;
+  successfulChecks: number;
+}
+
 export interface ComponentViewModel {
   id: number;
   productId: number;
@@ -57,6 +67,7 @@ export interface ComponentViewModel {
   latestLogDate: string | null;
   latestUptime: number | null;
   latestAvgResponseTimeMs: number | null;
+  healthcheckDayLogs: HealthcheckDayLogViewModel[];
 }
 
 export interface ProductViewModel {

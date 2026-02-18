@@ -19,4 +19,84 @@
       <dd class="mt-1 font-medium text-slate-100">{{ avgResponseTimeText() }}</dd>
     </div>
   </dl>
+
+  <section class="mt-4">
+    <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Daily health</p>
+
+    @if (visibleDayLogs().length) {
+      <div class="relative mt-2">
+        @if (activeDayLog(); as dayLog) {
+          <div
+            #dayPopup
+            data-day-popup
+            class="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-lg border border-white/10 bg-slate-950/95 px-3 py-3 text-xs text-slate-300 shadow-xl shadow-slate-950/70"
+            role="status"
+            aria-live="polite"
+            (mouseenter)="onPopupEnter()"
+            (mouseleave)="onPopupLeave()"
+            (click)="onPopupClick($event)"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <p class="font-semibold text-slate-100">{{ formatDay(dayLog.date) }}</p>
+              <span class="font-medium text-slate-200">{{ statusLabel(dayLog.status) }}</span>
+            </div>
+            <!-- <button
+              type="button"
+              class="absolute right-2 top-2 rounded-md px-1 text-slate-400 transition hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300"
+              aria-label="Close day details"
+              (click)="clearActiveDay($event)"
+            >
+              ×
+            </button> -->
+
+            <dl class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+              <div>
+                <dt class="text-slate-400">Uptime</dt>
+                <dd class="font-medium text-slate-100">{{ formatUptime(dayLog.uptime) }}</dd>
+              </div>
+              <div>
+                <dt class="text-slate-400">Avg response</dt>
+                <dd class="font-medium text-slate-100">
+                  {{ formatLatency(dayLog.avgResponseTimeMs) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-slate-400">Max response</dt>
+                <dd class="font-medium text-slate-100">
+                  {{ formatLatency(dayLog.maxResponseTimeMs) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-slate-400">Checks</dt>
+                <dd class="font-medium text-slate-100">
+                  {{ dayLog.successfulChecks }}/{{ dayLog.totalChecks }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        }
+
+        <div class="overflow-x-auto pb-1" data-day-bars (mouseleave)="onBarsLeave()">
+          <div class="flex min-w-max items-center gap-1.5">
+            @for (log of visibleDayLogs(); track log.date + '-' + $index; let index = $index) {
+              <button
+                type="button"
+                class="h-7 w-2 shrink-0 rounded-sm border border-white/10 outline-none transition focus-visible:ring-2 focus-visible:ring-cyan-300"
+                [ngClass]="dayBarClasses(log.status)"
+                [attr.aria-label]="dayAriaLabel(log)"
+                (mouseenter)="onDayEnter(index)"
+                (focus)="onDayFocus(index)"
+              ></button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <p class="mt-3 text-xs text-slate-400">
+        Hover or focus a day bar to inspect metrics. Click the popup to pin it.
+      </p>
+    } @else {
+      <p class="mt-2 text-sm text-slate-400">No daily health logs yet.</p>
+    }
+  </section>
 </article>

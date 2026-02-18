@@ -118,6 +118,63 @@ describe('status.mapper', () => {
     expect(mapped.components[0].latestLogDate).toBeNull();
     expect(mapped.components[0].latestUptime).toBeNull();
     expect(mapped.components[0].latestAvgResponseTimeMs).toBeNull();
+    expect(mapped.components[0].healthcheckDayLogs).toEqual([]);
+  });
+
+  it('maps day logs sorted by newest date and normalizes daily statuses', () => {
+    const product = buildProduct({
+      components: [
+        {
+          ...buildProduct().components[0],
+          healthcheckDayLogs: [
+            {
+              date: '2026-02-17T00:00:00Z',
+              totalChecks: 60,
+              successfulChecks: 58,
+              uptime: 96.7,
+              avgResponseTime: 210,
+              maxResponseTime: 640,
+              overallStatus: 'DEGRADED_PERFORMANCE',
+            },
+            {
+              date: '2026-02-18T00:00:00Z',
+              totalChecks: 60,
+              successfulChecks: 50,
+              uptime: 83.3,
+              avgResponseTime: 540,
+              maxResponseTime: 1150,
+              overallStatus: 'OUTAGE',
+            },
+            {
+              date: '2026-02-16T00:00:00Z',
+              totalChecks: 60,
+              successfulChecks: 60,
+              uptime: 100,
+              avgResponseTime: 140,
+              maxResponseTime: 320,
+              overallStatus: 'OPERATIONAL',
+            },
+          ],
+        },
+      ],
+    });
+
+    const [mapped] = mapProducts([product]);
+    const [component] = mapped.components;
+
+    expect(component.latestLogDate).toBe('2026-02-18T00:00:00Z');
+    expect(component.latestUptime).toBe(83.3);
+    expect(component.latestAvgResponseTimeMs).toBe(540);
+    expect(component.healthcheckDayLogs.map((log) => log.date)).toEqual([
+      '2026-02-18T00:00:00Z',
+      '2026-02-17T00:00:00Z',
+      '2026-02-16T00:00:00Z',
+    ]);
+    expect(component.healthcheckDayLogs.map((log) => log.status)).toEqual([
+      'MAJOR_OUTAGE',
+      'DEGRADED',
+      'OPERATIONAL',
+    ]);
   });
 
   it('includes product when query matches component name', () => {

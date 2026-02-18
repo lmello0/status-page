@@ -1,20 +1,34 @@
 import {
   ComponentViewModel,
   HealthcheckDayLogApi,
+  HealthcheckDayLogViewModel,
   ProductApi,
   ProductComponentApi,
   ProductViewModel,
 } from '../models/status.models';
 import { aggregateProductStatus, normalizeStatus } from '../utils/status-severity';
 
-function getLatestLog(logs: HealthcheckDayLogApi[]): HealthcheckDayLogApi | null {
-  if (!logs.length) {
-    return null;
-  }
+function dateToTimestamp(value: string): number {
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
 
-  return logs.reduce((latest, current) =>
-    Date.parse(current.date) > Date.parse(latest.date) ? current : latest,
-  );
+function mapDayLog(log: HealthcheckDayLogApi): HealthcheckDayLogViewModel {
+  return {
+    date: log.date,
+    status: normalizeStatus(log.overallStatus),
+    uptime: log.uptime,
+    avgResponseTimeMs: log.avgResponseTime,
+    maxResponseTimeMs: log.maxResponseTime,
+    totalChecks: log.totalChecks,
+    successfulChecks: log.successfulChecks,
+  };
+}
+
+function mapDayLogs(logs: HealthcheckDayLogApi[]): HealthcheckDayLogViewModel[] {
+  return [...logs]
+    .sort((left, right) => dateToTimestamp(right.date) - dateToTimestamp(left.date))
+    .map((log) => mapDayLog(log));
 }
 
 function mapComponent(component: ProductComponentApi): ComponentViewModel | null {
@@ -22,7 +36,8 @@ function mapComponent(component: ProductComponentApi): ComponentViewModel | null
     return null;
   }
 
-  const latestLog = getLatestLog(component.healthcheckDayLogs ?? []);
+  const dayLogs = mapDayLogs(component.healthcheckDayLogs ?? []);
+  const latestLog = dayLogs[0] ?? null;
 
   return {
     id: component.id,
@@ -32,7 +47,8 @@ function mapComponent(component: ProductComponentApi): ComponentViewModel | null
     status: normalizeStatus(component.currentStatus),
     latestLogDate: latestLog?.date ?? null,
     latestUptime: latestLog?.uptime ?? null,
-    latestAvgResponseTimeMs: latestLog?.avgResponseTime ?? null,
+    latestAvgResponseTimeMs: latestLog?.avgResponseTimeMs ?? null,
+    healthcheckDayLogs: dayLogs,
   };
 }
 

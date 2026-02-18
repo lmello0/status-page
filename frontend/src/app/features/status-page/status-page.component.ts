@@ -66,12 +66,7 @@ export class StatusPageComponent implements OnInit, OnDestroy {
     this.fetchPage(1, true);
 
     this.query$
-      .pipe(
-        skip(1),
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
+      .pipe(skip(1), debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         this.fetchPage(1, true);
       });
