@@ -37,7 +37,7 @@ class LocalScheduler(Scheduler):
             func=func,
             trigger=IntervalTrigger(seconds=interval_seconds),
             args=args,
-            kwags=kwargs,
+            kwargs=kwargs,
             id=job_key,
             name=job_name,
             replace_existing=True,

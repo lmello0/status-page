@@ -1,6 +1,7 @@
+from datetime import date, datetime, time, timedelta, timezone
 from functools import lru_cache
 
-from sqlalchemy import RowMapping, bindparam, select, text
+from sqlalchemy import Float, Integer, RowMapping, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.domain.healthcheck_day_summary import HealthcheckLogDaySummary
@@ -9,24 +10,6 @@ from core.domain.status_type import StatusType
 from core.port.log_repository import LogRepository
 from infra.db.models import HealthcheckLogModel
 from infra.db.session import get_session_factory
-
-SUMMARY_BULK_QUERY = """
-    SELECT
-        component_id,
-        checked_at::date                                                           as summary_date,
-        count(*)                                                                   as total_checks,
-        count(*) filter (where is_successful)                                      as successful_checks,
-        round((count(*) filter(where is_successful) / count(*)::numeric) * 100, 2) as uptime,
-        ceil(avg(response_time_ms))                                                as avg_response_time,
-        max(response_time_ms)                                                      as max_response_time,
-        max(status_after)                                                          as overall_status
-    from health_checks
-    where
-        component_id IN :component_ids
-        and checked_at >= current_date - cast(:last_n_days as integer)
-    group by component_id, checked_at::date
-    order by component_id ASC, summary_date DESC
-"""
 
 
 class PostgresLogRepository(LogRepository):
@@ -86,22 +69,40 @@ class PostgresLogRepository(LogRepository):
         if not deduped_component_ids:
             return {}
 
-        async with self._session_factory() as session:
-            statement = text(SUMMARY_BULK_QUERY).bindparams(bindparam("component_ids", expanding=True))
+        summary_date_expr = func.date(HealthcheckLogModel.checked_at).label("summary_date")
+        total_checks_expr = func.count(HealthcheckLogModel.id).label("total_checks")
+        successful_checks_expr = func.sum(case((HealthcheckLogModel.is_successful.is_(True), 1), else_=0)).label(
+            "successful_checks"
+        )
+        uptime_expr = func.round(
+            (cast(successful_checks_expr, Float) / cast(total_checks_expr, Float)) * 100.0, 2
+        ).label("uptime")
+        avg_response_time_expr = cast(func.avg(HealthcheckLogModel.response_time_ms) + 0.999_999, Integer).label(
+            "avg_response_time"
+        )
+        max_response_time_expr = func.max(HealthcheckLogModel.response_time_ms).label("max_response_time")
+        overall_status_expr = func.max(HealthcheckLogModel.status_after).label("overall_status")
+        since = datetime.now(timezone.utc) - timedelta(days=last_n_days)
 
-            rows = (
-                (
-                    await session.execute(
-                        statement,
-                        {
-                            "component_ids": deduped_component_ids,
-                            "last_n_days": last_n_days,
-                        },
-                    )
-                )
-                .mappings()
-                .all()
+        statement = (
+            select(
+                HealthcheckLogModel.component_id.label("component_id"),
+                summary_date_expr,
+                total_checks_expr,
+                successful_checks_expr,
+                uptime_expr,
+                avg_response_time_expr,
+                max_response_time_expr,
+                overall_status_expr,
             )
+            .where(HealthcheckLogModel.component_id.in_(deduped_component_ids))
+            .where(HealthcheckLogModel.checked_at >= since)
+            .group_by(HealthcheckLogModel.component_id, summary_date_expr)
+            .order_by(HealthcheckLogModel.component_id.asc(), summary_date_expr.desc())
+        )
+
+        async with self._session_factory() as session:
+            rows = (await session.execute(statement)).mappings().all()
 
             summaries_by_component: dict[int, list[HealthcheckLogDaySummary]] = {}
 
@@ -124,15 +125,26 @@ class PostgresLogRepository(LogRepository):
         )
 
     def _to_day_summary(self, row: RowMapping) -> HealthcheckLogDaySummary:
+        raw_summary_date = row["summary_date"]
+
+        summary_date: datetime
+        if isinstance(raw_summary_date, datetime):
+            summary_date = raw_summary_date
+        elif isinstance(raw_summary_date, date):
+            summary_date = datetime.combine(raw_summary_date, time.min, tzinfo=timezone.utc)
+        else:
+            parsed_date = date.fromisoformat(str(raw_summary_date))
+            summary_date = datetime.combine(parsed_date, time.min, tzinfo=timezone.utc)
+
         return HealthcheckLogDaySummary(
             component_id=int(row["component_id"]),
-            date=row["summary_date"],
+            date=summary_date,
             total_checks=int(row["total_checks"]),
             successful_checks=int(row["successful_checks"]),
             uptime=float(row["uptime"]),
             avg_response_time=int(row["avg_response_time"]),
             max_response_time=int(row["max_response_time"]),
-            overall_status=StatusType(str(row["overall_status"])),
+            overall_status=StatusType(row["overall_status"]),
         )
 
 

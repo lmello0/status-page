@@ -111,14 +111,10 @@ class PostgresComponentRepository(ComponentRepository):
         async with self._session_factory() as session:
             statement = delete(ComponentModel).where(ComponentModel.id == component_id)
 
-            await session.execute(statement)
+            result = await session.execute(statement)
             await session.commit()
 
-            result = await session.execute(
-                select(func.count(ComponentModel.id)).where(ComponentModel.id == component_id)
-            )
-
-            return result.scalar_one_or_none() is None
+            return result.rowcount == 1 # type: ignore
 
     async def find_all_without_pagination(self) -> list[Component]:
         async with self._session_factory() as session:

@@ -9,18 +9,19 @@ dev = "uvicorn main:create_app --app-dir src --factory --host 0.0.0.0 --port 808
 [packages]
 fastapi = "*"
 asyncpg = "*"
+sqlalchemy = "*"
 uvicorn = "*"
 structlog = "*"
 pydantic-settings = "*"
 psutil = "*"
 apscheduler = "*"
 httpx = "*"
+aiosqlite = "*"
 
 [dev-packages]
 pytest = "*"
 pytest-cov = "*"
 pytest-asyncio = "*"
-git-filter-repo = "*"
 
 [requires]
 python_version = "3.14"
