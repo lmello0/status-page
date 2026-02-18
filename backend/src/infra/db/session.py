@@ -2,7 +2,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from functools import lru_cache
 
-from sqlalchemy import URL
+from sqlalchemy import URL, event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -11,11 +11,31 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from infra.config.config import get_config
+from infra.db.models import Base
 
 
 @lru_cache
 def get_engine() -> AsyncEngine:
     db_config = get_config().DATABASE_CONFIG
+
+    if db_config.DRIVER == "sqlite":
+        url = URL.create(
+            drivername="sqlite+aiosqlite",
+            database=db_config.SQLITE_PATH,
+        )
+        engine = create_async_engine(
+            url,
+            echo=db_config.ECHO,
+            pool_pre_ping=True,
+        )
+
+        @event.listens_for(engine.sync_engine, "connect")
+        def _set_sqlite_pragma(dbapi_connection, _connection_record) -> None:
+            cursor = dbapi_connection.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
+
+        return engine
 
     url = URL.create(
         drivername="postgresql+asyncpg",
@@ -69,3 +89,8 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 async def close_engine() -> None:
     await get_engine().dispose()
+
+
+async def create_database_schema() -> None:
+    async with get_engine().begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)

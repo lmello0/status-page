@@ -18,6 +18,8 @@ from infra.db.models import Base
 
 @pytest.fixture(autouse=True)
 def _set_required_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("DATABASE_CONFIG__DRIVER", "postgres")
+    monkeypatch.setenv("DATABASE_CONFIG__SQLITE_PATH", "./status_page.db")
     monkeypatch.setenv("DATABASE_CONFIG__USER", "status_page_user")
     monkeypatch.setenv("DATABASE_CONFIG__PASSWORD", "1234")
     monkeypatch.setenv("DATABASE_CONFIG__HOST", "localhost")

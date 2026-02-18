@@ -53,10 +53,14 @@ async def test_create_app_wires_routers_middleware_and_lifespan(monkeypatch: pyt
 
     scheduler = FakeScheduler()
     close_engine_calls = {"count": 0}
+    create_database_schema_calls = {"count": 0}
     configure_calls: list[dict] = []
 
     async def fake_close_engine() -> None:
         close_engine_calls["count"] += 1
+
+    async def fake_create_database_schema() -> None:
+        create_database_schema_calls["count"] += 1
 
     def fake_configure_logging(**kwargs) -> None:
         configure_calls.append(kwargs)
@@ -85,6 +89,7 @@ async def test_create_app_wires_routers_middleware_and_lifespan(monkeypatch: pyt
     monkeypatch.setattr(app_module, "HealthcheckService", FakeHealthcheckService)
     monkeypatch.setattr(app_module.httpx, "AsyncClient", FakeHttpClient)
     monkeypatch.setattr(app_module, "close_engine", fake_close_engine)
+    monkeypatch.setattr(app_module, "create_database_schema", fake_create_database_schema)
 
     app = app_module.create_app()
 
@@ -116,7 +121,60 @@ async def test_create_app_wires_routers_middleware_and_lifespan(monkeypatch: pyt
         assert len(FakeHealthcheckService.instances) == 1
         assert FakeHealthcheckService.instances[0].started is True
 
+    assert create_database_schema_calls["count"] == 1
     assert scheduler.stopped is True
     assert close_engine_calls["count"] == 1
     assert len(FakeHttpClient.instances) == 1
     assert FakeHttpClient.instances[0].closed is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("environment", ["pre", "pro"])
+async def test_create_app_does_not_create_schema_outside_dev_or_loc(
+    monkeypatch: pytest.MonkeyPatch,
+    environment: str,
+) -> None:
+    FakeHttpClient.instances.clear()
+    FakeHealthcheckService.instances.clear()
+
+    scheduler = FakeScheduler()
+    create_database_schema_calls = {"count": 0}
+
+    async def fake_create_database_schema() -> None:
+        create_database_schema_calls["count"] += 1
+
+    async def fake_close_engine() -> None:
+        return None
+
+    config = SimpleNamespace(
+        APP_NAME="status-page",
+        VERSION="9.9.9",
+        ENVIRONMENT=environment,
+        ROOT_PATH="/status",
+        HOST="127.0.0.1",
+        PORT=9999,
+        SYNC_INTERVAL_SECONDS=15,
+        LOGGING_CONFIG=SimpleNamespace(
+            LEVEL="INFO",
+            JSON_FORMAT=False,
+            LIBRARY_LOG_LEVELS={"httpx": "WARNING"},
+        ),
+    )
+
+    monkeypatch.setattr(app_module, "get_config", lambda: config)
+    monkeypatch.setattr(app_module, "configure_logging", lambda **kwargs: None)
+    monkeypatch.setattr(app_module, "get_local_scheduler", lambda: scheduler)
+    monkeypatch.setattr(app_module, "get_dict_component_cache", lambda: DictComponentCache())
+    monkeypatch.setattr(app_module, "get_component_repository", lambda: FakeComponentRepository())
+    monkeypatch.setattr(app_module, "get_log_repository", lambda: FakeLogRepository())
+    monkeypatch.setattr(app_module, "HealthcheckService", FakeHealthcheckService)
+    monkeypatch.setattr(app_module.httpx, "AsyncClient", FakeHttpClient)
+    monkeypatch.setattr(app_module, "create_database_schema", fake_create_database_schema)
+    monkeypatch.setattr(app_module, "close_engine", fake_close_engine)
+
+    app = app_module.create_app()
+
+    async with app.router.lifespan_context(app):
+        pass
+
+    assert create_database_schema_calls["count"] == 0

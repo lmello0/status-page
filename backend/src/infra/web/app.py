@@ -15,7 +15,7 @@ from infra.adapter.local_scheduler import get_local_scheduler
 from infra.adapter.postgres_component_repository import get_component_repository
 from infra.adapter.postgres_log_repository import get_log_repository
 from infra.config.config import get_config
-from infra.db.session import close_engine
+from infra.db.session import close_engine, create_database_schema
 from infra.logging.config import configure_logging
 from infra.services.healthcheck_service import HealthcheckService
 from infra.web.middleware.request_event_log_middleware import RequestEventLogMiddleware
@@ -58,6 +58,9 @@ def create_app() -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
+        if config.ENVIRONMENT in ["dev", "loc"]:
+            await create_database_schema()
+
         scheduler.start()
         await healthcheck_service.start()
 
