@@ -121,7 +121,7 @@ describe('StatusPageComponent', () => {
     });
 
     getProductsMock.mockImplementation((page: number, _size: number, search?: string) => {
-      expect(page).toBe(0);
+      expect(page).toBe(1);
       return of(paged(search ? [payments, messaging] : [payments, messaging]));
     });
 
@@ -135,7 +135,7 @@ describe('StatusPageComponent', () => {
     await new Promise((resolve) => setTimeout(resolve, 350));
     fixture.detectChanges();
 
-    expect(getProductsMock).toHaveBeenCalledWith(0, 10, 'checkout');
+    expect(getProductsMock).toHaveBeenCalledWith(1, 10, 'checkout');
     expect(fixture.nativeElement.textContent).toContain('Payments');
     expect(fixture.nativeElement.textContent).not.toContain('Messaging');
   });
@@ -168,11 +168,11 @@ describe('StatusPageComponent', () => {
     });
 
     getProductsMock.mockImplementation((page: number) => {
-      if (page === 0) {
-        return of(paged([payments, messaging], 2));
+      if (page === 1) {
+        return of(paged([payments, messaging], 3));
       }
 
-      return of(paged([commerce], 2));
+      return of(paged([commerce], 3));
     });
 
     const fixture = TestBed.createComponent(StatusPageComponent);
@@ -192,7 +192,7 @@ describe('StatusPageComponent', () => {
     loadMoreButton.click();
     fixture.detectChanges();
 
-    expect(getProductsMock).toHaveBeenCalledWith(1, 10, undefined);
+    expect(getProductsMock).toHaveBeenCalledWith(2, 10, undefined);
     expect(fixture.nativeElement.textContent).toContain('Commerce');
   });
 });

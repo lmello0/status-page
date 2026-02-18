@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { environment } from '../../../environments/environment';
 import { ProductsApiService } from './products-api.service';
 
 describe('ProductsApiService', () => {
@@ -21,14 +22,14 @@ describe('ProductsApiService', () => {
     httpMock.verify();
   });
 
-  it('requests products with page and size params', () => {
+  it('requests products with page and page_size params', () => {
     service.getProducts(0, 10).subscribe();
 
-    const request = httpMock.expectOne((req) => req.url === '/api/products');
+    const request = httpMock.expectOne((req) => req.url === `${environment.apiBaseUrl}/product`);
 
     expect(request.request.method).toBe('GET');
     expect(request.request.params.get('page')).toBe('0');
-    expect(request.request.params.get('size')).toBe('10');
+    expect(request.request.params.get('page_size')).toBe('10');
     expect(request.request.params.has('search')).toBe(false);
 
     request.flush({
@@ -43,10 +44,10 @@ describe('ProductsApiService', () => {
   it('sends search param for filtered requests', () => {
     service.getProducts(2, 10, 'payments').subscribe();
 
-    const request = httpMock.expectOne((req) => req.url === '/api/products');
+    const request = httpMock.expectOne((req) => req.url === `${environment.apiBaseUrl}/product`);
 
     expect(request.request.params.get('page')).toBe('2');
-    expect(request.request.params.get('size')).toBe('10');
+    expect(request.request.params.get('page_size')).toBe('10');
     expect(request.request.params.get('search')).toBe('payments');
 
     request.flush({
@@ -61,7 +62,7 @@ describe('ProductsApiService', () => {
   it('omits search when only whitespace is provided', () => {
     service.getProducts(0, 10, '   ').subscribe();
 
-    const request = httpMock.expectOne((req) => req.url === '/api/products');
+    const request = httpMock.expectOne((req) => req.url === `${environment.apiBaseUrl}/product`);
 
     expect(request.request.params.has('search')).toBe(false);
 

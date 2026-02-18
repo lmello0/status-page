@@ -12,7 +12,7 @@ export class ProductsApiService {
   private readonly http = inject(HttpClient);
 
   getProducts(page: number, size: number, search?: string): Observable<PagedResponse<ProductApi>> {
-    let params = new HttpParams().set('page', `${page}`).set('size', `${size}`);
+    let params = new HttpParams().set('page', `${page}`).set('page_size', `${size}`);
     const normalizedSearch = search?.trim();
 
     if (normalizedSearch) {

@@ -1,0 +1,22 @@
+FROM python:3.14-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+RUN apt update -y && apt install curl -y
+RUN pip install --no-cache-dir pipenv
+
+COPY Pipfile Pipfile.lock ./
+
+RUN pipenv install --deploy --system --ignore-pipfile
+
+COPY . .
+
+RUN rm -rf tests
+RUN chmod +x entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/bin/bash", "entrypoint.sh"]

@@ -3,6 +3,12 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from use_cases.component.get_all_components_unpaginated_use_case import (
+    GetAllComponentsUnpaginatedUseCase,
+)
+from use_cases.component.update_component_status_use_case import (
+    UpdateComponentStatusUseCase,
+)
 
 from infra.adapter.dict_component_cache import get_dict_component_cache
 from infra.adapter.local_scheduler import get_local_scheduler
@@ -16,12 +22,6 @@ from infra.web.middleware.request_event_log_middleware import RequestEventLogMid
 from infra.web.routers.component_router import router as component_router
 from infra.web.routers.product_router import router as product_router
 from infra.web.routers.stats_router import router as stats_router
-from use_cases.component.get_all_components_unpaginated_use_case import (
-    GetAllComponentsUnpaginatedUseCase,
-)
-from use_cases.component.update_component_status_use_case import (
-    UpdateComponentStatusUseCase,
-)
 
 
 def create_app() -> FastAPI:
@@ -77,7 +77,10 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins="http://localhost:4200",
+        allow_origins=[
+            "http://localhost:4200",
+            "http://localhost:8000",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
