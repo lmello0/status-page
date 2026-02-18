@@ -1,0 +1,11 @@
+<section class="space-y-4" aria-label="Product status list">
+  @for (product of products(); track product.id; let index = $index) {
+    <div class="product-enter" [style.animationDelay.ms]="index * 70">
+      <app-product-accordion-item
+        [product]="product"
+        [expanded]="expandedProductIds().has(product.id)"
+        (toggled)="onToggle($event)"
+      />
+    </div>
+  }
+</section>

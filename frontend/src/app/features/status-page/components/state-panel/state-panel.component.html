@@ -1,0 +1,21 @@
+<section class="rounded-2xl border border-white/10 bg-slate-900/65 p-8 text-center shadow-lg shadow-slate-950/40 backdrop-blur-sm">
+  @if (kind() === 'loading') {
+    <div
+      class="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-slate-300/30 border-t-cyan-300"
+      aria-hidden="true"
+    ></div>
+  }
+
+  <h3 class="font-display text-xl font-semibold text-slate-100">{{ resolvedTitle() }}</h3>
+  <p class="mx-auto mt-2 max-w-xl text-sm text-slate-300">{{ resolvedMessage() }}</p>
+
+  @if (resolvedActionLabel()) {
+    <button
+      type="button"
+      class="mt-5 inline-flex items-center rounded-lg border border-cyan-300/50 bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+      (click)="onAction()"
+    >
+      {{ resolvedActionLabel() }}
+    </button>
+  }
+</section>
