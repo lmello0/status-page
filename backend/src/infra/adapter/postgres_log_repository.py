@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta, timezone
 from functools import lru_cache
 
-from sqlalchemy import Float, Integer, RowMapping, case, cast, func, select
+from sqlalchemy import Float, Integer, Numeric, RowMapping, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from core.domain.healthcheck_day_summary import HealthcheckLogDaySummary
@@ -75,7 +75,7 @@ class PostgresLogRepository(LogRepository):
             "successful_checks"
         )
         uptime_expr = func.round(
-            (cast(successful_checks_expr, Float) / cast(total_checks_expr, Float)) * 100.0, 2
+            cast((cast(successful_checks_expr, Float) / cast(total_checks_expr, Float)) * 100.0, Numeric(10, 4)), 2
         ).label("uptime")
         avg_response_time_expr = cast(func.avg(HealthcheckLogModel.response_time_ms) + 0.999_999, Integer).label(
             "avg_response_time"
