@@ -20,7 +20,12 @@ class UpdateProductUseCase:
         if not product:
             raise ProductNotFoundError
 
-        updates = product_data.model_dump(exclude_none=True)
+        updates = {}
+        if product_data.name is not None:
+            updates["name"] = product_data.name
+
+        if product_data.description is not None:
+            updates["description"] = product_data.description
 
         updated_product = replace(product, **updates)
 
