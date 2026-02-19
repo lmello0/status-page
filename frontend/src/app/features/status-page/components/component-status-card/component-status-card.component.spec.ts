@@ -26,6 +26,14 @@ function buildComponent(overrides: Partial<ComponentViewModel> = {}): ComponentV
     productId: 1,
     name: 'Checkout API',
     type: 'BACKEND',
+    monitoringConfig: {
+      healthUrl: 'https://example.com/health',
+      checkIntervalSeconds: 60,
+      timeoutSeconds: 30,
+      expectedStatusCode: 200,
+      maxResponseTimeMs: 5000,
+      failuresBeforeOutage: 3,
+    },
     status: 'OPERATIONAL',
     latestLogDate: '2026-02-18T00:00:00Z',
     latestUptime: 100,
@@ -99,11 +107,35 @@ describe('ComponentStatusCardComponent', () => {
       .queryAll(By.css('button[aria-label]'))
       .map((item) => item.nativeElement as HTMLButtonElement);
 
-    expect(dayBars[0].classList.contains('bg-emerald-400/80')).toBe(true);
-    expect(dayBars[1].classList.contains('bg-amber-400/80')).toBe(true);
+    expect(dayBars[0].classList.contains('bg-slate-400/70')).toBe(true);
+    expect(dayBars[1].classList.contains('bg-rose-400/80')).toBe(true);
     expect(dayBars[2].classList.contains('bg-orange-400/80')).toBe(true);
-    expect(dayBars[3].classList.contains('bg-rose-400/80')).toBe(true);
-    expect(dayBars[4].classList.contains('bg-slate-400/70')).toBe(true);
+    expect(dayBars[3].classList.contains('bg-amber-400/80')).toBe(true);
+    expect(dayBars[4].classList.contains('bg-emerald-400/80')).toBe(true);
+  });
+
+  it('emits edit event with component id', () => {
+    const fixture = createComponentFixture(buildComponent({ id: 404 }));
+    const emitSpy = vi.spyOn(fixture.componentInstance.editComponent, 'emit');
+
+    const editButton = fixture.nativeElement.querySelector(
+      'button[data-action="edit-component"]',
+    ) as HTMLButtonElement | null;
+    editButton?.click();
+
+    expect(emitSpy).toHaveBeenCalledWith(404);
+  });
+
+  it('emits remove event with component id', () => {
+    const fixture = createComponentFixture(buildComponent({ id: 505 }));
+    const emitSpy = vi.spyOn(fixture.componentInstance.removeComponent, 'emit');
+
+    const removeButton = fixture.nativeElement.querySelector(
+      'button[data-action="remove-component"]',
+    ) as HTMLButtonElement | null;
+    removeButton?.click();
+
+    expect(emitSpy).toHaveBeenCalledWith(505);
   });
 
   it('opens popup only after hover delay', () => {
@@ -127,7 +159,7 @@ describe('ComponentStatusCardComponent', () => {
         .queryAll(By.css('button[aria-label]'))
         .map((item) => item.nativeElement as HTMLButtonElement);
 
-      dayBars[1].dispatchEvent(new Event('mouseenter'));
+      dayBars[0].dispatchEvent(new Event('mouseenter'));
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('[data-day-popup]')).toBeNull();
@@ -206,7 +238,7 @@ describe('ComponentStatusCardComponent', () => {
       .queryAll(By.css('button[aria-label]'))
       .map((item) => item.nativeElement as HTMLButtonElement);
 
-    dayBars[1].dispatchEvent(new Event('focus'));
+    dayBars[0].dispatchEvent(new Event('focus'));
     fixture.detectChanges();
 
     const popup: HTMLElement | null = fixture.nativeElement.querySelector('[data-day-popup]');
@@ -254,7 +286,7 @@ describe('ComponentStatusCardComponent', () => {
       .queryAll(By.css('button[aria-label]'))
       .map((item) => item.nativeElement as HTMLButtonElement);
 
-    dayBars[1].dispatchEvent(new Event('focus'));
+    dayBars[0].dispatchEvent(new Event('focus'));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Feb 17, 2026');
@@ -264,16 +296,17 @@ describe('ComponentStatusCardComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('1820 ms');
     expect(fixture.nativeElement.textContent).toContain('39/48');
 
-    dayBars[1].dispatchEvent(new Event('blur'));
+    const popupBeforeBlur: HTMLElement | null = fixture.nativeElement.querySelector('[data-day-popup]');
+    expect(popupBeforeBlur).not.toBeNull();
+    popupBeforeBlur?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    dayBars[0].dispatchEvent(new Event('blur'));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Feb 17, 2026');
 
-    const closeButton: HTMLButtonElement | null = fixture.nativeElement.querySelector(
-      'button[aria-label="Close day details"]',
-    );
-    expect(closeButton).not.toBeNull();
-    closeButton?.click();
+    fixture.componentInstance.clearActiveDay();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Hover or focus a day bar to inspect metrics.');

@@ -5,6 +5,11 @@
         [product]="product"
         [expanded]="expandedProductIds().has(product.id)"
         (toggled)="onToggle($event)"
+        (editProduct)="onEditProduct($event)"
+        (removeProduct)="onRemoveProduct($event)"
+        (addComponent)="onAddComponent($event)"
+        (editComponent)="onEditComponent($event)"
+        (removeComponent)="onRemoveComponent($event)"
       />
     </div>
   }

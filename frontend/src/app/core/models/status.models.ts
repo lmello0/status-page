@@ -6,6 +6,7 @@ export interface PagedResponse<T> {
   content: T[];
 }
 
+export type ComponentType = 'BACKEND' | 'FRONTEND';
 export type StatusLevel = 'OPERATIONAL' | 'DEGRADED' | 'PARTIAL_OUTAGE' | 'MAJOR_OUTAGE' | 'UNKNOWN';
 
 export interface MonitoringConfigApi {
@@ -31,9 +32,9 @@ export interface ProductComponentApi {
   id: number;
   productId: number;
   name: string;
-  type: string;
+  type: ComponentType;
   monitoringConfig: MonitoringConfigApi;
-  currentStatus: string;
+  currentStatus: string | null;
   isActive: boolean;
   healthcheckDayLogs: HealthcheckDayLogApi[];
 }
@@ -62,7 +63,8 @@ export interface ComponentViewModel {
   id: number;
   productId: number;
   name: string;
-  type: string;
+  type: ComponentType;
+  monitoringConfig: MonitoringConfigApi;
   status: StatusLevel;
   latestLogDate: string | null;
   latestUptime: number | null;
@@ -76,4 +78,45 @@ export interface ProductViewModel {
   description: string;
   status: StatusLevel;
   components: ComponentViewModel[];
+}
+
+export interface ProductCreateDto {
+  name: string;
+  description?: string | null;
+}
+
+export interface ProductUpdateDto {
+  name?: string | null;
+  description?: string | null;
+}
+
+export interface MonitoringConfigCreateDto {
+  healthUrl: string;
+  checkIntervalSeconds: number;
+  timeoutSeconds: number;
+  expectedStatusCode: number;
+  maxResponseTimeMs: number;
+  failuresBeforeOutage: number;
+}
+
+export interface MonitoringConfigUpdateDto {
+  healthUrl?: string | null;
+  checkIntervalSeconds?: number | null;
+  timeoutSeconds?: number | null;
+  expectedStatusCode?: number | null;
+  maxResponseTimeMs?: number | null;
+  failuresBeforeOutage?: number | null;
+}
+
+export interface ComponentCreateDto {
+  productId: number;
+  name: string;
+  type: ComponentType;
+  monitoringConfig: MonitoringConfigCreateDto;
+}
+
+export interface ComponentUpdateDto {
+  name?: string | null;
+  type?: ComponentType | null;
+  monitoringConfig?: MonitoringConfigUpdateDto | null;
 }

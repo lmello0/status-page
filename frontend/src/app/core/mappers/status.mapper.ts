@@ -44,6 +44,7 @@ function mapComponent(component: ProductComponentApi): ComponentViewModel | null
     productId: component.productId,
     name: component.name,
     type: component.type,
+    monitoringConfig: component.monitoringConfig,
     status: normalizeStatus(component.currentStatus),
     latestLogDate: latestLog?.date ?? null,
     latestUptime: latestLog?.uptime ?? null,
@@ -60,10 +61,6 @@ export function mapProduct(product: ProductApi): ProductViewModel | null {
   const components = (product.components ?? [])
     .map((component) => mapComponent(component))
     .filter((component): component is ComponentViewModel => component !== null);
-
-  if (!components.length) {
-    return null;
-  }
 
   const description = typeof product.description === 'string' ? product.description.trim() : '';
 
@@ -90,7 +87,10 @@ export function normalizeText(text: string): string {
     .trim();
 }
 
-export function filterProductsByQuery(products: ProductViewModel[], query: string): ProductViewModel[] {
+export function filterProductsByQuery(
+  products: ProductViewModel[],
+  query: string,
+): ProductViewModel[] {
   const normalizedQuery = normalizeText(query);
 
   if (!normalizedQuery) {

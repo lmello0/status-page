@@ -1,0 +1,64 @@
+<app-modal-shell [title]="modalTitle()" (closed)="onCancel()">
+  <form class="space-y-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div>
+      <label class="mb-1 block text-sm font-semibold text-slate-200" for="product-name-input">Name</label>
+      <input
+        id="product-name-input"
+        type="text"
+        class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+        formControlName="name"
+        autocomplete="off"
+        maxlength="120"
+      />
+      @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+        <p class="mt-1 text-xs text-rose-300">Name is required.</p>
+      }
+      @if (form.controls.name.touched && form.controls.name.hasError('maxlength')) {
+        <p class="mt-1 text-xs text-rose-300">Name must be at most 120 characters.</p>
+      }
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-semibold text-slate-200" for="product-description-input">
+        Description
+      </label>
+      <textarea
+        id="product-description-input"
+        rows="4"
+        class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+        formControlName="description"
+        maxlength="3000"
+      ></textarea>
+      @if (form.controls.description.touched && form.controls.description.hasError('maxlength')) {
+        <p class="mt-1 text-xs text-rose-300">Description must be at most 3000 characters.</p>
+      }
+    </div>
+
+    @if (errorMessage()) {
+      <section
+        class="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200"
+        role="alert"
+      >
+        {{ errorMessage() }}
+      </section>
+    }
+
+    <footer class="flex items-center justify-end gap-2 border-t border-white/10 pt-4">
+      <button
+        type="button"
+        class="rounded-lg border border-white/20 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        [disabled]="saving()"
+        (click)="onCancel()"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="rounded-lg border border-cyan-300/50 bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="saving()"
+      >
+        {{ submitLabel() }}
+      </button>
+    </footer>
+  </form>
+</app-modal-shell>

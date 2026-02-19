@@ -1,0 +1,147 @@
+<app-modal-shell [title]="modalTitle()" (closed)="onCancel()">
+  <form class="space-y-4" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div class="sm:col-span-2">
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-name-input">Name</label>
+        <input
+          id="component-name-input"
+          type="text"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="name"
+          autocomplete="off"
+          maxlength="120"
+        />
+        @if (form.controls.name.touched && form.controls.name.hasError('required')) {
+          <p class="mt-1 text-xs text-rose-300">Name is required.</p>
+        }
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-type-input">Type</label>
+        <select
+          id="component-type-input"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="type"
+        >
+          <option value="BACKEND">BACKEND</option>
+          <option value="FRONTEND">FRONTEND</option>
+        </select>
+      </div>
+
+      <div class="sm:col-span-2">
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-health-url-input">
+          Health URL
+        </label>
+        <input
+          id="component-health-url-input"
+          type="url"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="healthUrl"
+          placeholder="https://example.com/health"
+          maxlength="2000"
+        />
+        @if (form.controls.healthUrl.touched && form.controls.healthUrl.hasError('required')) {
+          <p class="mt-1 text-xs text-rose-300">Health URL is required.</p>
+        }
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-check-interval-input">
+          Check interval (s)
+        </label>
+        <input
+          id="component-check-interval-input"
+          type="number"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="checkIntervalSeconds"
+          min="1"
+          step="1"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-timeout-input">
+          Timeout (s)
+        </label>
+        <input
+          id="component-timeout-input"
+          type="number"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="timeoutSeconds"
+          min="1"
+          step="1"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-status-code-input">
+          Expected status code
+        </label>
+        <input
+          id="component-status-code-input"
+          type="number"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="expectedStatusCode"
+          min="100"
+          max="599"
+          step="1"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-max-response-input">
+          Max response (ms)
+        </label>
+        <input
+          id="component-max-response-input"
+          type="number"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="maxResponseTimeMs"
+          min="1"
+          step="1"
+        />
+      </div>
+
+      <div>
+        <label class="mb-1 block text-sm font-semibold text-slate-200" for="component-failures-input">
+          Failures before outage
+        </label>
+        <input
+          id="component-failures-input"
+          type="number"
+          class="w-full rounded-lg border border-white/15 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30"
+          formControlName="failuresBeforeOutage"
+          min="1"
+          step="1"
+        />
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <section
+        class="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200"
+        role="alert"
+      >
+        {{ errorMessage() }}
+      </section>
+    }
+
+    <footer class="flex items-center justify-end gap-2 border-t border-white/10 pt-4">
+      <button
+        type="button"
+        class="rounded-lg border border-white/20 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+        [disabled]="saving()"
+        (click)="onCancel()"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="rounded-lg border border-cyan-300/50 bg-cyan-500/15 px-3 py-2 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+        [disabled]="saving()"
+      >
+        {{ submitLabel() }}
+      </button>
+    </footer>
+  </form>
+</app-modal-shell>

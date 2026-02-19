@@ -5,6 +5,7 @@ import {
   HostListener,
   input,
   OnDestroy,
+  output,
   signal,
   ViewChild,
   ElementRef,
@@ -28,6 +29,11 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 
+function dateToTimestamp(date: string): number {
+  const timestamp = Date.parse(date);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
 @Component({
   selector: 'app-component-status-card',
   standalone: true,
@@ -38,6 +44,8 @@ export class ComponentStatusCardComponent implements OnDestroy {
   @ViewChild('dayPopup') private dayPopup?: ElementRef<HTMLElement>;
 
   readonly component = input.required<ComponentViewModel>();
+  readonly editComponent = output<number>();
+  readonly removeComponent = output<number>();
   readonly activeDayIndex = signal<number | null>(null);
   readonly popupPinned = signal(false);
 
@@ -55,7 +63,9 @@ export class ComponentStatusCardComponent implements OnDestroy {
   });
 
   readonly visibleDayLogs = computed(() =>
-    this.component().healthcheckDayLogs.slice(0, MAX_DAYS_DISPLAYED),
+    [...this.component().healthcheckDayLogs]
+      .sort((left, right) => dateToTimestamp(left.date) - dateToTimestamp(right.date))
+      .slice(-MAX_DAYS_DISPLAYED),
   );
 
   readonly activeDayLog = computed(() => {
@@ -186,6 +196,14 @@ export class ComponentStatusCardComponent implements OnDestroy {
 
   dayAriaLabel(log: HealthcheckDayLogViewModel): string {
     return `${this.formatDay(log.date)} - ${this.statusLabel(log.status)}`;
+  }
+
+  onEditComponent(): void {
+    this.editComponent.emit(this.component().id);
+  }
+
+  onRemoveComponent(): void {
+    this.removeComponent.emit(this.component().id);
   }
 
   private scheduleHide(): void {

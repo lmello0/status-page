@@ -17,7 +17,16 @@
               Track product and component health in real time with fast search and expandable details.
             </p>
           </div>
-          <p class="text-sm font-medium text-slate-300">{{ summary() }}</p>
+          <div class="flex flex-col items-start gap-2 sm:items-end">
+            <p class="text-sm font-medium text-slate-300">{{ summary() }}</p>
+            <button
+              type="button"
+              class="rounded-lg border border-cyan-300/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+              (click)="onAddProduct()"
+            >
+              Add Product
+            </button>
+          </div>
         </div>
       </header>
 
@@ -37,6 +46,11 @@
             [products]="filteredItems()"
             [expandedProductIds]="expandedProductIds()"
             (toggled)="onToggleProduct($event)"
+            (editProduct)="onEditProduct($event)"
+            (removeProduct)="onRemoveProduct($event)"
+            (addComponent)="onAddComponent($event)"
+            (editComponent)="onEditComponent($event)"
+            (removeComponent)="onRemoveComponent($event)"
           />
         }
       </div>
@@ -49,6 +63,42 @@
             (clicked)="onLoadMore()"
           />
         </div>
+      }
+
+      @if (isProductModalOpen()) {
+        <app-product-form-modal
+          [mode]="productModalMode()"
+          [initialValue]="productModalInitialValue()"
+          [saving]="isSaving()"
+          [errorMessage]="modalError()"
+          (submitted)="onProductSubmit($event)"
+          (cancelled)="onModalClose()"
+        />
+      }
+
+      @if (isComponentModalOpen()) {
+        <app-component-form-modal
+          [mode]="componentModalMode()"
+          [productId]="componentModalProductId()"
+          [initialValue]="componentModalInitialValue()"
+          [saving]="isSaving()"
+          [errorMessage]="modalError()"
+          (submitted)="onComponentSubmit($event)"
+          (cancelled)="onModalClose()"
+        />
+      }
+
+      @if (isConfirmModalOpen()) {
+        <app-confirm-action-modal
+          [title]="confirmModalTitle()"
+          [message]="confirmModalMessage()"
+          [confirmLabel]="confirmModalConfirmLabel()"
+          [confirmEnabled]="confirmTargetExists()"
+          [saving]="isSaving()"
+          [errorMessage]="modalError()"
+          (confirmed)="onConfirmRemove()"
+          (cancelled)="onModalClose()"
+        />
       }
     </section>
   </main>
