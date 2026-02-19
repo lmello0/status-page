@@ -57,6 +57,25 @@ describe('ComponentStatusCardComponent', () => {
     }).compileComponents();
   });
 
+  it('renders health url as plain text in the card', () => {
+    const baseComponent = buildComponent();
+    const healthUrl = 'https://example.com/health/checks/status?region=us-east-1';
+    const fixture = createComponentFixture(
+      buildComponent({
+        monitoringConfig: {
+          ...baseComponent.monitoringConfig,
+          healthUrl,
+        },
+      }),
+    );
+
+    const healthUrlValue: HTMLElement | null = fixture.nativeElement.querySelector('[data-health-url]');
+
+    expect(fixture.nativeElement.textContent).toContain('Health URL');
+    expect(healthUrlValue?.textContent).toContain(healthUrl);
+    expect(fixture.nativeElement.querySelector(`a[href="${healthUrl}"]`)).toBeNull();
+  });
+
   it('shows empty logs fallback when no day logs are available', () => {
     const fixture = createComponentFixture(
       buildComponent({

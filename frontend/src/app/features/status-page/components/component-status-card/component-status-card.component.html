@@ -27,7 +27,14 @@
     </div>
   </div>
 
-  <dl class="mt-4 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
+  <section class="mt-4 rounded-lg bg-white/5 px-3 py-2">
+    <p class="text-xs uppercase tracking-[0.12em] text-slate-400">Health URL</p>
+    <p data-health-url class="mt-1 break-all text-sm font-medium text-slate-100">
+      {{ component().monitoringConfig.healthUrl }}
+    </p>
+  </section>
+
+  <dl class="mt-3 grid gap-2 text-sm text-slate-300 sm:grid-cols-2">
     <div class="rounded-lg bg-white/5 px-3 py-2">
       <dt class="text-xs uppercase tracking-[0.12em] text-slate-400">Latest Uptime</dt>
       <dd class="mt-1 font-medium text-slate-100">{{ uptimeText() }}</dd>
