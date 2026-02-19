@@ -75,6 +75,7 @@ def create_app() -> FastAPI:
         version=config.VERSION,
         root_path=config.ROOT_PATH,
         docs_url="/apidocs",
+        openapi_url="/openapi",
         lifespan=lifespan,
     )
 

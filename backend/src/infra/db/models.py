@@ -46,6 +46,7 @@ class ProductModel(Base):
         back_populates="product",
         cascade="all, delete-orphan",
         default_factory=list,
+        passive_deletes=True,
     )
 
 
@@ -80,6 +81,7 @@ class ComponentModel(Base):
         back_populates="component",
         cascade="all, delete-orphan",
         default_factory=list,
+        passive_deletes=True,
     )
 
 
@@ -87,7 +89,7 @@ class HealthcheckLogModel(Base):
     __tablename__ = "health_checks"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, init=False)
-    component_id: Mapped[int] = mapped_column(ForeignKey("components.id"), index=True)
+    component_id: Mapped[int] = mapped_column(ForeignKey("components.id", ondelete="CASCADE"), index=True)
 
     is_successful: Mapped[bool] = mapped_column(Boolean)
     status_code: Mapped[Optional[int]] = mapped_column(Integer)
